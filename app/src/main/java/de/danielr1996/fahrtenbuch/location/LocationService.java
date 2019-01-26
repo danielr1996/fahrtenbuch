@@ -1,9 +1,13 @@
 package de.danielr1996.fahrtenbuch.location;
 
-import org.geojson.Point;
+import java.util.function.Consumer;
 
-public class LocationService {
-    public Point getLocation(){
-        return null;
-    };
+import de.danielr1996.fahrtenbuch.model.Point;
+
+public interface LocationService {
+    void registerCallback(Consumer<Point> callback);
+
+    void start();
+
+    void stop();
 }

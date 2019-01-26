@@ -2,25 +2,28 @@ package de.danielr1996.fahrtenbuch;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.room.Room;
+import de.danielr1996.fahrtenbuch.location.AndroidLocationService;
+import de.danielr1996.fahrtenbuch.location.LocationService;
 import de.danielr1996.fahrtenbuch.storage.AppDatabase;
-import de.danielr1996.fahrtenbuch.storage.Messung;
 import de.danielr1996.fahrtenbuch.storage.MessungDao;
 import de.danielr1996.fahrtenbuch.storage.Messungen;
-import io.reactivex.functions.Consumer;
-import one.util.streamex.StreamEx;
+import de.danielr1996.fahrtenbuch.storage.geojson.GeoJsonExporter;
+import io.reactivex.disposables.Disposable;
 
 import android.os.Bundle;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
+import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
     private TextView tvKilometers;
-    private Button btnStart, btnStop, btnDeleteDb;
-    private AppDatabase appDatabase;
+    private Button btnStart, btnStop, btnDeleteDb, btnExport;
+    private ListView lvMessungen;
+    private LocationService locationService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,46 +33,38 @@ public class MainActivity extends AppCompatActivity {
         tvKilometers = findViewById(R.id.tv_kilometers);
         btnStart = findViewById(R.id.btn_start);
         btnStop = findViewById(R.id.btn_stop);
+        btnExport = findViewById(R.id.btn_export);
         btnDeleteDb = findViewById(R.id.btn_delete_db);
-        MessungDao dao = Room.databaseBuilder(getApplicationContext(),
-                AppDatabase.class, "users").allowMainThreadQueries().fallbackToDestructiveMigration().build().messungDao();
+        lvMessungen = findViewById(R.id.lv_messungen);
+        MessungDao dao = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "users").allowMainThreadQueries().fallbackToDestructiveMigration().build().messungDao();
+        locationService = new AndroidLocationService(this);
 
-        tvKilometers.setText(String.format(getString(R.string.tv_kilometers), 530.0));
+        locationService.registerCallback(point->dao.insertAll(Messungen.fromPoint(point, LocalDateTime.now())));
 
-        Messung messung1 = new Messung();
-        Messung messung2 = new Messung();
-        Messung messung3 = new Messung();
-        messung1.dateTime = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        messung1.longitude = 11.367073059082031;
-        messung1.latitude = 49.514510112029;
-        messung2.dateTime = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        messung2.longitude = 11.43350601196289;
-        messung2.latitude = 49.50893719029439;
-        messung3.dateTime = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        messung3.longitude = 11.400375366210938;
-        messung3.latitude = 49.47135913524246;
-        btnStart.setOnClickListener((noop) -> dao.insertAll(messung1, messung2, messung3));//9.66
         btnDeleteDb.setOnClickListener(noop -> dao.deleteAll());
+        btnStart.setOnClickListener(noop->locationService.start());
+        btnStop.setOnClickListener(noop->locationService.stop());
+        btnExport.setOnClickListener(noop->dao.getAllAsSingle().doOnSuccess(messungs -> GeoJsonExporter.saveToDisk(messungs, this)).subscribe());
 
-        Consumer<List<Messung>> consumer = (list) -> {
-            double strecke = StreamEx.of(list.stream())
-                    .map(Messungen::toPoint)
-            .pairMap((p1, p2)->p1.distanceInKm(p2))
-            .reduce((d1, d2)->d1+d2)
-            .orElse(0.0);
-            if(strecke>1000){
-                runOnUiThread(()->{
-                    this.tvKilometers.setText(String.format(getString(R.string.tv_kilometers), strecke));
-
+        Disposable subscription = dao.getAll()
+                .map(Messungen::length)
+                .map(this::generateDistanceString)
+                .subscribe(distance -> runOnUiThread(() -> this.tvKilometers.setText(distance)));
+        Disposable subscription2 = dao.getAll()
+                .map(list -> list.stream()
+                        .map(messung -> messung.latitude + " " + messung.longitude + " " + messung.dateTime)
+                        .collect(Collectors.toList()))
+                .subscribe(list -> {
+                    ArrayAdapter<String> listAdapter = new ArrayAdapter<>(this, R.layout.list_item_messung, R.id.list_item_messung, list);
+                    runOnUiThread(() -> lvMessungen.setAdapter(listAdapter));
                 });
-            }else{
-                runOnUiThread(()->{
-                    this.tvKilometers.setText(String.format(getString(R.string.tv_meters), (int)strecke));
+    }
 
-                });
-            }
-        };
-
-        dao.getAll().subscribe(consumer);
+    private String generateDistanceString(double distance) {
+        if (distance > 1000) {
+            return String.format(getString(R.string.tv_kilometers), distance);
+        } else {
+            return String.format(getString(R.string.tv_meters), (int) distance);
+        }
     }
 }

@@ -7,11 +7,16 @@ import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 import io.reactivex.Flowable;
+import io.reactivex.Single;
 
 @Dao
 public interface MessungDao {
     @Query("SELECT * FROM messung")
     Flowable<List<Messung>> getAll();
+
+
+    @Query("SELECT * FROM messung")
+    Single<List<Messung>> getAllAsSingle();
 
     @Query("DELETE FROM messung")
     void deleteAll();
