@@ -5,4 +5,8 @@
     <string name="btn_stop">Messung stoppen</string>
     <string name="btn_delete_db">DB Löschen</string>
     <string name="btn_export">Exportieren</string>
+    <string name="menu_start">Start</string>
+    <string name="menu_stop">Stop</string>
+    <string name="menu_delete">Löschen</string>
+    <string name="menu_export">Exportieren</string>
 </resources>

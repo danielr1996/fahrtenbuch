@@ -11,6 +11,8 @@ import de.danielr1996.fahrtenbuch.storage.geojson.GeoJsonExporter;
 import io.reactivex.disposables.Disposable;
 
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -21,9 +23,9 @@ import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
     private TextView tvKilometers;
-    private Button btnStart, btnStop, btnDeleteDb, btnExport;
     private ListView lvMessungen;
     private LocationService locationService;
+    MessungDao dao;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,20 +33,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         tvKilometers = findViewById(R.id.tv_kilometers);
-        btnStart = findViewById(R.id.btn_start);
-        btnStop = findViewById(R.id.btn_stop);
-        btnExport = findViewById(R.id.btn_export);
-        btnDeleteDb = findViewById(R.id.btn_delete_db);
         lvMessungen = findViewById(R.id.lv_messungen);
-        MessungDao dao = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "users").allowMainThreadQueries().fallbackToDestructiveMigration().build().messungDao();
+
+        dao = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "users").allowMainThreadQueries().fallbackToDestructiveMigration().build().messungDao();
         locationService = new AndroidLocationService(this);
-
         locationService.registerCallback(point -> dao.insertAll(Messungen.fromPoint(point, LocalDateTime.now())));
-
-        btnDeleteDb.setOnClickListener(noop -> dao.deleteAll());
-        btnStart.setOnClickListener(noop -> locationService.start());
-        btnStop.setOnClickListener(noop -> locationService.stop());
-        btnExport.setOnClickListener(noop -> dao.getAllAsSingle().doOnSuccess(messungs -> GeoJsonExporter.saveToDisk(messungs, this)).subscribe());
 
         Disposable textViewAktualisieren = dao.getAll()
                 .map(Messungen::length)
@@ -57,5 +50,27 @@ public class MainActivity extends AppCompatActivity {
                     ArrayAdapter<String> listAdapter = new ArrayAdapter<>(this, R.layout.list_item_messung, R.id.list_item_messung, list);
                     runOnUiThread(() -> lvMessungen.setAdapter(listAdapter));
                 });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    public void onStartMessung(MenuItem mi) {
+        locationService.start();
+    }
+
+    public void onStopMessung(MenuItem mi) {
+        locationService.stop();
+    }
+
+    public void onExport(MenuItem mi) {
+        dao.getAllAsSingle().doOnSuccess(messungs -> GeoJsonExporter.saveToDisk(messungs, this)).subscribe();
+    }
+
+    public void onDelete(MenuItem mi) {
+        dao.deleteAll();
     }
 }
