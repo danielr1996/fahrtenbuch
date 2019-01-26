@@ -3,26 +3,19 @@ package de.danielr1996.fahrtenbuch.location;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnSuccessListener;
-
 
 import java.util.function.Consumer;
 
 import androidx.core.content.ContextCompat;
 import de.danielr1996.fahrtenbuch.model.Point;
 
-public class AndroidLocationService implements LocationService {
+public class AndroidLocationService extends AbstractLocationService {
     private LocationManager locationManager;
     private Activity activity;
-    private Consumer<Point> callback;
     private LocationListener locationListener;
 
     public AndroidLocationService(Activity activity) {
@@ -32,13 +25,8 @@ public class AndroidLocationService implements LocationService {
     }
 
     @Override
-    public void registerCallback(Consumer<Point> callback) {
-        this.callback = callback;
-
-    }
-
-    @Override
     public void start() {
+        super.start();
         ContextCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION);
         this.locationListener = new AndroidLocationListener(this.callback);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
@@ -46,8 +34,8 @@ public class AndroidLocationService implements LocationService {
 
     @Override
     public void stop() {
+        super.stop();
         locationManager.removeUpdates(locationListener);
-
     }
 
     class AndroidLocationListener implements LocationListener{

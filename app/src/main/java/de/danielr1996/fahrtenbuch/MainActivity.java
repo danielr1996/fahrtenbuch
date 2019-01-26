@@ -14,7 +14,6 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -22,7 +21,7 @@ import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
-    private TextView tvKilometers;
+    private TextView tvDistance, tvActive;
     private ListView lvMessungen;
     private LocationService locationService;
     MessungDao dao;
@@ -32,16 +31,18 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        tvKilometers = findViewById(R.id.tv_kilometers);
+        tvDistance = findViewById(R.id.tv_distance);
+        tvActive = findViewById(R.id.tv_active);
         lvMessungen = findViewById(R.id.lv_messungen);
 
         dao = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "users").allowMainThreadQueries().fallbackToDestructiveMigration().build().messungDao();
-        locationService = new AndroidLocationService(this);
-        locationService.registerCallback(point -> dao.insertAll(Messungen.fromPoint(point, LocalDateTime.now())));
+        locationService = new AndroidLocationService(this)
+                .registerCallback(point -> dao.insertAll(Messungen.fromPoint(point, LocalDateTime.now())))
+                .registerCallbackActive(active->tvActive.setText(active+""));
 
         Disposable textViewAktualisieren = dao.getAll()
                 .map(Messungen::length)
-                .subscribe(distance -> runOnUiThread(() -> this.tvKilometers.setText(String.format(getString(R.string.tv_kilometers), distance))));
+                .subscribe(distance -> runOnUiThread(() -> this.tvDistance.setText(String.format(getString(R.string.tv_kilometers), distance))));
         Disposable listViewAktualisieren = dao.getAll()
                 .map(list -> list.stream()
                         .map(messung -> messung.latitude + " " + messung.longitude + " " + messung.dateTime)
