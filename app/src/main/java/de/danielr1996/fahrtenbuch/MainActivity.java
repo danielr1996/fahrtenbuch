@@ -16,12 +16,14 @@ import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
-    private TextView tvDistance, tvActive;
+    private TextView tvDistance;
+    private ToggleButton btnActive;
     private ListView lvMessungen;
     private LocationService locationService;
     MessungDao dao;
@@ -32,13 +34,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         tvDistance = findViewById(R.id.tv_distance);
-        tvActive = findViewById(R.id.tv_active);
+        btnActive = findViewById(R.id.btn_active);
         lvMessungen = findViewById(R.id.lv_messungen);
 
         dao = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "users").allowMainThreadQueries().fallbackToDestructiveMigration().build().messungDao();
         locationService = new AndroidLocationService(this)
                 .registerCallback(point -> dao.insertAll(Messungen.fromPoint(point, LocalDateTime.now())))
-                .registerCallbackActive(active->tvActive.setText(active+""));
+                .registerCallbackActive(btnActive::setChecked);
 
         Disposable textViewAktualisieren = dao.getAll()
                 .map(Messungen::length)
