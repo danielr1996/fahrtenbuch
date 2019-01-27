@@ -20,6 +20,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import java.time.LocalDateTime;
@@ -59,9 +60,9 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(distance -> runOnUiThread(() -> this.tvDistance.setText(String.format(getString(R.string.tv_kilometers), distance))));
         Disposable sinceAktualisierung = dao.getAll()
                 .subscribe(messungen -> runOnUiThread(() -> {
-                    if(!messungen.isEmpty()){
+                    if (!messungen.isEmpty()) {
                         this.tvSince.setText(LocalDateTime.parse(messungen.get(0).dateTime).format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
-                    }else{
+                    } else {
                         this.tvSince.setText("");
                     }
                 }));
@@ -82,7 +83,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onExport(MenuItem mi) {
-        dao.getAllAsSingle().doOnSuccess(messungs -> GeoJsonExporter.saveToDisk(messungs, this)).subscribe();
+        Disposable disposable = dao.getAllAsSingle()
+                .map(messungen -> {
+                    GeoJsonExporter.saveToDisk(messungen, this);
+                    return messungen;
+                }).subscribe(messungen -> {
+                    runOnUiThread(() -> {
+                        Toast toast = Toast.makeText(getApplicationContext(), "Fahrt auf SD Karte gespeichert", Toast.LENGTH_SHORT);
+                        toast.show();
+                    });
+                }, throwable -> {
+                    runOnUiThread(() -> {
+                        Toast toast = Toast.makeText(getApplicationContext(), "Fehler beim Exportieren", Toast.LENGTH_SHORT);
+                        toast.show();
+                    });
+                });
     }
 
     public void onDelete(MenuItem mi) {
