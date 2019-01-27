@@ -22,7 +22,7 @@ import de.danielr1996.fahrtenbuch.storage.Messung;
 import de.danielr1996.fahrtenbuch.storage.Messungen;
 
 public class GeoJsonExporter {
-    public static boolean saveToDisk(FeatureCollection featureCollection, Activity activity) {
+    public static void saveToDisk(FeatureCollection featureCollection, Activity activity) throws IOException {
         activity.requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
 
         File sdCard = Environment.getExternalStorageDirectory();
@@ -30,17 +30,12 @@ public class GeoJsonExporter {
         dir.mkdirs();
         File file = new File(dir, "fahrtenbuch.json");
 
-        try {
             FileOutputStream f = new FileOutputStream(file);
             ObjectMapper om = new ObjectMapper();
             om.writeValue(f, featureCollection);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return true;
     }
 
-    public static boolean saveToDisk(List<Messung> messungen, Activity activity) {
+    public static void saveToDisk(List<Messung> messungen, Activity activity) throws IOException {
         FeatureCollection featureCollection = new FeatureCollection();
         messungen.stream()
                 .map(messung -> {
@@ -55,6 +50,6 @@ public class GeoJsonExporter {
                     return feature;
                 })
                 .forEach(featureCollection::add);
-        return GeoJsonExporter.saveToDisk(featureCollection, activity);
+        GeoJsonExporter.saveToDisk(featureCollection, activity);
     }
 }
