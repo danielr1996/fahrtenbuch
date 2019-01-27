@@ -1,6 +1,7 @@
 package de.danielr1996.fahrtenbuch;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.room.Room;
 import de.danielr1996.fahrtenbuch.location.AndroidLocationService;
 import de.danielr1996.fahrtenbuch.location.LocationService;
@@ -16,17 +17,18 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
-    private TextView tvDistance;
-    private ToggleButton btnActive;
-//    private ListView lvMessungen;
+    private TextView tvDistance, tvActive, tvSince;
+    private ImageView ivActive;
     private LocationService locationService;
     private MessungDao dao;
 
@@ -36,25 +38,33 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         tvDistance = findViewById(R.id.tv_distance);
-        btnActive = findViewById(R.id.btn_active);
-//        lvMessungen = findViewById(R.id.lv_messungen);
-
+        tvActive = findViewById(R.id.tv_active);
+        tvSince = findViewById(R.id.tv_since);
+        ivActive = findViewById(R.id.iv_active);
         dao = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "users").allowMainThreadQueries().fallbackToDestructiveMigration().build().messungDao();
         locationService = new AndroidLocationService(this)
                 .registerCallback(point -> dao.insertAll(Messungen.fromPoint(point, LocalDateTime.now())))
-                .registerCallbackActive(btnActive::setChecked);
+                .registerCallbackActive(active -> {
+                    if (active) {
+                        ivActive.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_baseline_active_24px));
+                        tvActive.setText(getText(R.string.tv_active_active));
+                    } else {
+                        ivActive.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_baseline_inactive_24px));
+                        tvActive.setText(getText(R.string.tv_active_inactive));
+                    }
+                });
 
         Disposable textViewAktualisieren = dao.getAll()
                 .map(Messungen::length)
                 .subscribe(distance -> runOnUiThread(() -> this.tvDistance.setText(String.format(getString(R.string.tv_kilometers), distance))));
-//        Disposable listViewAktualisieren = dao.getAll()
-//                .map(list -> list.stream()
-//                        .map(messung -> messung.latitude + " " + messung.longitude + " " + messung.dateTime)
-//                        .collect(Collectors.toList()))
-//                .subscribe(list -> {
-//                    ArrayAdapter<String> listAdapter = new ArrayAdapter<>(this, R.layout.list_item_messung, R.id.list_item_messung, list);
-//                    runOnUiThread(() -> lvMessungen.setAdapter(listAdapter));
-//                });
+        Disposable sinceAktualisierung = dao.getAll()
+                .subscribe(messungen -> runOnUiThread(() -> {
+                    if(!messungen.isEmpty()){
+                        this.tvSince.setText(LocalDateTime.parse(messungen.get(0).dateTime).format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+                    }else{
+                        this.tvSince.setText("");
+                    }
+                }));
     }
 
     @Override
@@ -79,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
         dao.deleteAll();
     }
 
-    public void openActivity(View view){
+    public void onMap(MenuItem mi) {
         Intent intent = new Intent(this, MapsActivity.class);
         startActivity(intent);
     }

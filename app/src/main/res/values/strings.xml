@@ -10,4 +10,9 @@
     <string name="menu_delete">Löschen</string>
     <string name="menu_export">Exportieren</string>
     <string name="title_activity_maps">Map</string>
+    <string name="iv_active_desciption">Tracking Zustand</string>
+    <string name="tv_active_active">Tracking aktiv</string>
+    <string name="tv_active_inactive">Tracking deaktiviert</string>
+    <string name="txt_du_bist_seit">Du bist seit</string>
+    <string name="txt_gefahren">gefahren.</string>
 </resources>

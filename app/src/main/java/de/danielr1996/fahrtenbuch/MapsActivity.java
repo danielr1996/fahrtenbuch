@@ -52,15 +52,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         List<LatLng> camera = new ArrayList<>();
 
         Disposable mapAktualisierung = dao.getAll()
-                .subscribe(list -> list.stream()
-                        .map(messung -> {
-                            LatLng latLng = new LatLng(messung.latitude, messung.longitude);
-                            camera.add(latLng);
-                            return new MarkerOptions().position(latLng).title(messung.dateTime);
-                        }).forEach(marker -> runOnUiThread(()->mMap.addMarker(marker))));
-        if (camera.size() > 0) {
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(camera.get(0)));
-        }
+                .subscribe(list -> {
+                    list.stream()
+                            .map(messung -> {
+                                LatLng latLng = new LatLng(messung.latitude, messung.longitude);
+                                camera.add(latLng);
+                                return new MarkerOptions().position(latLng).title(messung.dateTime);
+                            }).forEach(marker -> runOnUiThread(() -> mMap.addMarker(marker)));
+                    if (camera.size() > 0) {
+                        runOnUiThread(() -> {
+                            mMap.moveCamera(CameraUpdateFactory.newLatLng(camera.get(0)));
+                            mMap.setMaxZoomPreference(mMap.getMaxZoomLevel());
+                        });
+                    }
+                });
+
 
     }
 }
