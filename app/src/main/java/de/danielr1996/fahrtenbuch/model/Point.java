@@ -38,4 +38,11 @@ public class Point {
 
         return Math.abs(d);
     }
+
+    public static Point fromGeoJsonPoint(org.geojson.Point point){
+        Point p = new Point();
+        p.setLongitude(point.getCoordinates().getLongitude());
+        p.setLatitude(point.getCoordinates().getLatitude());
+        return p;
+    }
 }
