@@ -10,9 +10,11 @@ import de.danielr1996.fahrtenbuch.storage.Messungen;
 import de.danielr1996.fahrtenbuch.storage.geojson.GeoJsonExporter;
 import io.reactivex.disposables.Disposable;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -24,9 +26,9 @@ import java.util.stream.Collectors;
 public class MainActivity extends AppCompatActivity {
     private TextView tvDistance;
     private ToggleButton btnActive;
-    private ListView lvMessungen;
+//    private ListView lvMessungen;
     private LocationService locationService;
-    MessungDao dao;
+    private MessungDao dao;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
         tvDistance = findViewById(R.id.tv_distance);
         btnActive = findViewById(R.id.btn_active);
-        lvMessungen = findViewById(R.id.lv_messungen);
+//        lvMessungen = findViewById(R.id.lv_messungen);
 
         dao = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "users").allowMainThreadQueries().fallbackToDestructiveMigration().build().messungDao();
         locationService = new AndroidLocationService(this)
@@ -45,14 +47,14 @@ public class MainActivity extends AppCompatActivity {
         Disposable textViewAktualisieren = dao.getAll()
                 .map(Messungen::length)
                 .subscribe(distance -> runOnUiThread(() -> this.tvDistance.setText(String.format(getString(R.string.tv_kilometers), distance))));
-        Disposable listViewAktualisieren = dao.getAll()
-                .map(list -> list.stream()
-                        .map(messung -> messung.latitude + " " + messung.longitude + " " + messung.dateTime)
-                        .collect(Collectors.toList()))
-                .subscribe(list -> {
-                    ArrayAdapter<String> listAdapter = new ArrayAdapter<>(this, R.layout.list_item_messung, R.id.list_item_messung, list);
-                    runOnUiThread(() -> lvMessungen.setAdapter(listAdapter));
-                });
+//        Disposable listViewAktualisieren = dao.getAll()
+//                .map(list -> list.stream()
+//                        .map(messung -> messung.latitude + " " + messung.longitude + " " + messung.dateTime)
+//                        .collect(Collectors.toList()))
+//                .subscribe(list -> {
+//                    ArrayAdapter<String> listAdapter = new ArrayAdapter<>(this, R.layout.list_item_messung, R.id.list_item_messung, list);
+//                    runOnUiThread(() -> lvMessungen.setAdapter(listAdapter));
+//                });
     }
 
     @Override
@@ -75,5 +77,10 @@ public class MainActivity extends AppCompatActivity {
 
     public void onDelete(MenuItem mi) {
         dao.deleteAll();
+    }
+
+    public void openActivity(View view){
+        Intent intent = new Intent(this, MapsActivity.class);
+        startActivity(intent);
     }
 }

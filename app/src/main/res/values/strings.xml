@@ -9,4 +9,5 @@
     <string name="menu_stop">Stop</string>
     <string name="menu_delete">Löschen</string>
     <string name="menu_export">Exportieren</string>
+    <string name="title_activity_maps">Map</string>
 </resources>

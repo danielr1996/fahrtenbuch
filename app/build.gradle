@@ -29,6 +29,7 @@ dependencies {
     implementation "androidx.room:room-runtime:$room_version"
     implementation "androidx.room:room-rxjava2:$room_version"
     implementation "androidx.room:room-guava:$room_version"
+    implementation 'com.google.android.gms:play-services-maps:16.0.0'
     annotationProcessor "android.arch.persistence.room:compiler:$room_version"
     testImplementation "androidx.room:room-testing:$room_version"
 
