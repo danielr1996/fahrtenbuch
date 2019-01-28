@@ -1,31 +1,27 @@
 package de.danielr1996.fahrtenbuch;
 
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.room.Room;
-import de.danielr1996.fahrtenbuch.location.AndroidLocationService;
+import de.danielr1996.fahrtenbuch.location.GoogleLocationService;
 import de.danielr1996.fahrtenbuch.location.LocationService;
 import de.danielr1996.fahrtenbuch.storage.AppDatabase;
 import de.danielr1996.fahrtenbuch.storage.MessungDao;
 import de.danielr1996.fahrtenbuch.storage.Messungen;
 import de.danielr1996.fahrtenbuch.storage.geojson.GeoJsonExporter;
 import io.reactivex.disposables.Disposable;
-
-import android.content.Intent;
-import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.ImageView;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
-import android.widget.ToggleButton;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
     private TextView tvDistance, tvActive, tvSince;
@@ -34,16 +30,33 @@ public class MainActivity extends AppCompatActivity {
     private MessungDao dao;
 
     @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String[] permissions,
+                                           int[] grantResults) {
+        if (requestCode == 1) {
+            if(grantResults.length == 1
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // We can now safely use the API we requested access to
+                System.out.println("Permission granted");
+            } else {
+                // Permission was denied or request was cancelled
+                System.out.println("Permission denied");
+            }
+        }
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
 
         tvDistance = findViewById(R.id.tv_distance);
         tvActive = findViewById(R.id.tv_active);
         tvSince = findViewById(R.id.tv_since);
         ivActive = findViewById(R.id.iv_active);
         dao = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "users").allowMainThreadQueries().fallbackToDestructiveMigration().build().messungDao();
-        locationService = new AndroidLocationService(this)
+        locationService = new GoogleLocationService(this)
                 .registerCallback(point -> dao.insertAll(Messungen.fromPoint(point, LocalDateTime.now())))
                 .registerCallbackActive(active -> {
                     if (active) {

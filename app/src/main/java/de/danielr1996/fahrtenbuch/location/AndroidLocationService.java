@@ -38,7 +38,9 @@ public class AndroidLocationService extends AbstractLocationService {
         locationManager.removeUpdates(locationListener);
     }
 
-    class AndroidLocationListener implements LocationListener{
+
+
+    protected class AndroidLocationListener implements LocationListener {
         private Consumer<Point> callback;
 
         public AndroidLocationListener(Consumer<Point> callback){
