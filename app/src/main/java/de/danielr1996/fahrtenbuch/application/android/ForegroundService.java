@@ -9,9 +9,8 @@ import android.os.IBinder;
 import android.util.Log;
 
 import de.danielr1996.fahrtenbuch.R;
-
+import de.danielr1996.fahrtenbuch.application.geojson.Features;
 public class ForegroundService extends Service {
-
 
     @Override
     public void onCreate() {
