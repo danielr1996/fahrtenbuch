@@ -61,8 +61,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             }).forEach(marker -> runOnUiThread(() -> mMap.addMarker(marker)));
                     if (camera.size() > 0) {
                         runOnUiThread(() -> {
-                            mMap.moveCamera(CameraUpdateFactory.newLatLng(camera.get(0)));
-                            mMap.setMaxZoomPreference(mMap.getMaxZoomLevel());
+                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(camera.get(0),10));
                         });
                     }
                 });
