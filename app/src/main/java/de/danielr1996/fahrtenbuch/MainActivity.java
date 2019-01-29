@@ -1,8 +1,10 @@
 package de.danielr1996.fahrtenbuch;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
@@ -28,13 +30,15 @@ public class MainActivity extends AppCompatActivity {
     private ImageView ivActive;
     private LocationService locationService;
     private MessungDao dao;
+    private Activity activity = this;
+    Intent trackingServiceIntent;
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String[] permissions,
                                            int[] grantResults) {
         if (requestCode == 1) {
-            if(grantResults.length == 1
+            if (grantResults.length == 1
                     && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // We can now safely use the API we requested access to
                 System.out.println("Permission granted");
@@ -47,9 +51,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.i(MainActivity.class.getName(), "onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
 
         tvDistance = findViewById(R.id.tv_distance);
         tvActive = findViewById(R.id.tv_active);
@@ -57,7 +61,10 @@ public class MainActivity extends AppCompatActivity {
         ivActive = findViewById(R.id.iv_active);
         dao = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "users").allowMainThreadQueries().fallbackToDestructiveMigration().build().messungDao();
         locationService = new GoogleLocationService(this)
-                .registerCallback(point -> dao.insertAll(Messungen.fromPoint(point, LocalDateTime.now())))
+                .registerCallback(point -> {
+                    Log.i(GoogleLocationService.class.getName(),"Received New Location: "+ point);
+                    dao.insertAll(Messungen.fromPoint(point, LocalDateTime.now()));
+                })
                 .registerCallbackActive(active -> {
                     if (active) {
                         ivActive.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_baseline_active_24px));
@@ -120,5 +127,21 @@ public class MainActivity extends AppCompatActivity {
     public void onMap(MenuItem mi) {
         Intent intent = new Intent(this, MapsActivity.class);
         startActivity(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.i(MainActivity.class.toString(), "onResume");
+        if (trackingServiceIntent != null)
+            stopService(trackingServiceIntent);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.i(MainActivity.class.toString(), "onPause");
+        trackingServiceIntent = new Intent(this.getApplication(), ForegroundService.class);
+        this.getApplication().startForegroundService(trackingServiceIntent);
     }
 }
