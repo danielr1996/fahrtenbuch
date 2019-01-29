@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     private MessungDao dao;
     private Activity activity = this;
     Intent trackingServiceIntent;
+    private boolean trackingActive = false;
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -62,10 +63,11 @@ public class MainActivity extends AppCompatActivity {
         dao = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "users").allowMainThreadQueries().fallbackToDestructiveMigration().build().messungDao();
         locationService = new GoogleLocationService(this)
                 .registerCallback(point -> {
-                    Log.i(GoogleLocationService.class.getName(),"Received New Location: "+ point);
+                    Log.i(GoogleLocationService.class.getName(), "Received New Location: " + point);
                     dao.insertAll(Messungen.fromPoint(point, LocalDateTime.now()));
                 })
                 .registerCallbackActive(active -> {
+                    trackingActive = active;
                     if (active) {
                         ivActive.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_baseline_active_24px));
                         tvActive.setText(getText(R.string.tv_active_active));
@@ -141,7 +143,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         Log.i(MainActivity.class.toString(), "onPause");
-        trackingServiceIntent = new Intent(this.getApplication(), ForegroundService.class);
-        this.getApplication().startForegroundService(trackingServiceIntent);
+        if (trackingActive) {
+            trackingServiceIntent = new Intent(this.getApplication(), ForegroundService.class);
+            this.getApplication().startForegroundService(trackingServiceIntent);
+        }
     }
 }
