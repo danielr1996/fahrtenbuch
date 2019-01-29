@@ -1,4 +1,4 @@
-package de.danielr1996.fahrtenbuch.location;
+package de.danielr1996.fahrtenbuch.application.location;
 
 import android.Manifest;
 import android.app.Activity;
@@ -11,7 +11,7 @@ import android.os.Bundle;
 import java.util.function.Consumer;
 
 import androidx.core.content.ContextCompat;
-import de.danielr1996.fahrtenbuch.model.Point;
+import de.danielr1996.fahrtenbuch.domain.Punkt;
 
 public class AndroidLocationService extends AbstractLocationService {
     private LocationManager locationManager;
@@ -41,14 +41,14 @@ public class AndroidLocationService extends AbstractLocationService {
 
 
     protected class AndroidLocationListener implements LocationListener {
-        private Consumer<Point> callback;
+        private Consumer<Punkt> callback;
 
-        public AndroidLocationListener(Consumer<Point> callback){
+        public AndroidLocationListener(Consumer<Punkt> callback){
             this.callback = callback;
         }
 
         public void onLocationChanged(Location location) {
-            callback.accept(new Point().setLatitude(location.getLatitude()).setLongitude(location.getLongitude()));
+            callback.accept(Punkt.builder().latitude(location.getLatitude()).longitude(location.getLongitude()).altitude(location.getAltitude()).build());
         }
 
         public void onStatusChanged(String provider, int status, Bundle extras) {

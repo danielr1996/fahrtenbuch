@@ -1,4 +1,4 @@
-package de.danielr1996.fahrtenbuch;
+package de.danielr1996.fahrtenbuch.application.android;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -7,6 +7,8 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
+
+import de.danielr1996.fahrtenbuch.R;
 
 public class ForegroundService extends Service {
 

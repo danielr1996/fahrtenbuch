@@ -1,4 +1,4 @@
-package de.danielr1996.fahrtenbuch;
+package de.danielr1996.fahrtenbuch.application.android;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -11,28 +11,36 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.geojson.FeatureCollection;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.room.Room;
-import de.danielr1996.fahrtenbuch.location.GoogleLocationService;
-import de.danielr1996.fahrtenbuch.location.LocationService;
-import de.danielr1996.fahrtenbuch.storage.AppDatabase;
-import de.danielr1996.fahrtenbuch.storage.MessungDao;
-import de.danielr1996.fahrtenbuch.storage.Messungen;
-import de.danielr1996.fahrtenbuch.storage.geojson.GeoJsonExporter;
+import de.danielr1996.fahrtenbuch.R;
+import de.danielr1996.fahrtenbuch.application.geojson.FeatureCollections;
+import de.danielr1996.fahrtenbuch.application.geojson.Points;
+import de.danielr1996.fahrtenbuch.application.location.GoogleLocationService;
+import de.danielr1996.fahrtenbuch.application.location.LocationService;
+import de.danielr1996.fahrtenbuch.application.storage.AppDatabase;
+import de.danielr1996.fahrtenbuch.application.storage.DatabaseMessungRepository;
+import de.danielr1996.fahrtenbuch.application.storage.MessungDao;
+import de.danielr1996.fahrtenbuch.application.geojson.GeoJsonExporter;
+import de.danielr1996.fahrtenbuch.domain.Messung;
+import de.danielr1996.fahrtenbuch.domain.MessungRepository;
+import de.danielr1996.fahrtenbuch.domain.Messungen;
 import io.reactivex.disposables.Disposable;
 
 public class MainActivity extends AppCompatActivity {
     private TextView tvDistance, tvActive, tvSince;
     private ImageView ivActive;
     private LocationService locationService;
-    private MessungDao dao;
     private Activity activity = this;
     Intent trackingServiceIntent;
     private boolean trackingActive = false;
+    private MessungRepository messungRepository;
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -60,11 +68,12 @@ public class MainActivity extends AppCompatActivity {
         tvActive = findViewById(R.id.tv_active);
         tvSince = findViewById(R.id.tv_since);
         ivActive = findViewById(R.id.iv_active);
-        dao = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "users").allowMainThreadQueries().fallbackToDestructiveMigration().build().messungDao();
+        messungRepository = new DatabaseMessungRepository(getApplicationContext());
+
         locationService = new GoogleLocationService(this)
                 .registerCallback(point -> {
                     Log.i(GoogleLocationService.class.getName(), "Received New Location: " + point);
-                    dao.insertAll(Messungen.fromPoint(point, LocalDateTime.now()));
+                    messungRepository.insertAll(Messung.builder().timestamp(LocalDateTime.now()).punkt(point).build());
                 })
                 .registerCallbackActive(active -> {
                     trackingActive = active;
@@ -77,13 +86,13 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-        Disposable textViewAktualisieren = dao.getAll()
+        Disposable textViewAktualisieren = messungRepository.getAll()
                 .map(Messungen::length)
                 .subscribe(distance -> runOnUiThread(() -> this.tvDistance.setText(String.format(getString(R.string.tv_kilometers), distance))));
-        Disposable sinceAktualisierung = dao.getAll()
+        Disposable sinceAktualisierung = messungRepository.getAll()
                 .subscribe(messungen -> runOnUiThread(() -> {
                     if (!messungen.isEmpty()) {
-                        this.tvSince.setText(LocalDateTime.parse(messungen.get(0).dateTime).format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+                        this.tvSince.setText(messungen.get(0).getTimestamp().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
                     } else {
                         this.tvSince.setText("");
                     }
@@ -105,9 +114,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onExport(MenuItem mi) {
-        Disposable disposable = dao.getAllAsSingle()
+        Disposable disposable = messungRepository.getAllAsSingle()
                 .map(messungen -> {
-                    GeoJsonExporter.saveToDisk(messungen, this);
+                    GeoJsonExporter.saveToDisk(FeatureCollections.fromMessungen(messungen), this);
                     return messungen;
                 }).subscribe(messungen -> {
                     runOnUiThread(() -> {
@@ -123,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onDelete(MenuItem mi) {
-        dao.deleteAll();
+        messungRepository.deleteAll();
     }
 
     public void onMap(MenuItem mi) {

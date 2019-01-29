@@ -1,11 +1,10 @@
-package de.danielr1996.fahrtenbuch;
+package de.danielr1996.fahrtenbuch.application.android;
 
 import androidx.fragment.app.FragmentActivity;
 import androidx.room.Room;
-import de.danielr1996.fahrtenbuch.storage.AppDatabase;
-import de.danielr1996.fahrtenbuch.storage.Messung;
-import de.danielr1996.fahrtenbuch.storage.MessungDao;
-import de.danielr1996.fahrtenbuch.storage.Messungen;
+import de.danielr1996.fahrtenbuch.R;
+import de.danielr1996.fahrtenbuch.application.storage.AppDatabase;
+import de.danielr1996.fahrtenbuch.application.storage.MessungDao;
 import io.reactivex.disposables.Disposable;
 
 import android.os.Bundle;
@@ -19,7 +18,6 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 

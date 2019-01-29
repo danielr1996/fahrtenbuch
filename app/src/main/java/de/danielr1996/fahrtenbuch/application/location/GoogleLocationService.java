@@ -1,16 +1,14 @@
-package de.danielr1996.fahrtenbuch.location;
+package de.danielr1996.fahrtenbuch.application.location;
 
 import android.Manifest;
 import android.app.Activity;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.util.Log;
 
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
@@ -25,8 +23,7 @@ import java.util.function.Consumer;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
-import de.danielr1996.fahrtenbuch.MainActivity;
-import de.danielr1996.fahrtenbuch.model.Point;
+import de.danielr1996.fahrtenbuch.domain.Punkt;
 
 public class GoogleLocationService extends AbstractLocationService {
     private FusedLocationProviderClient client;
@@ -87,16 +84,16 @@ public class GoogleLocationService extends AbstractLocationService {
     }
 
     protected class GoogleLocationListener extends LocationCallback implements OnSuccessListener<Location> {
-        private Consumer<Point> callback;
+        private Consumer<Punkt> callback;
 
-        public GoogleLocationListener(Consumer<Point> callback) {
+        public GoogleLocationListener(Consumer<Punkt> callback) {
             this.callback = callback;
         }
 
 
         @Override
         public void onSuccess(Location location) {
-            callback.accept(new Point().setLatitude(location.getLatitude()).setLongitude(location.getLongitude()));
+            callback.accept(Punkt.builder().latitude(location.getLatitude()).longitude(location.getLongitude()).altitude(location.getAltitude()).build());
         }
 
         @Override
@@ -104,7 +101,7 @@ public class GoogleLocationService extends AbstractLocationService {
             if (locationResult == null) {
                 return;
             }
-            callback.accept(new Point().setLatitude(locationResult.getLastLocation().getLatitude()).setLongitude(locationResult.getLastLocation().getLongitude()));
+            callback.accept(Punkt.builder().latitude(locationResult.getLastLocation().getLatitude()).longitude(locationResult.getLastLocation().getLongitude()).altitude(locationResult.getLastLocation().getAltitude()).build());
         }
 
         ;

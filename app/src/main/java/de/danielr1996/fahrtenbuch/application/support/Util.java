@@ -1,4 +1,4 @@
-package de.danielr1996.fahrtenbuch.support;
+package de.danielr1996.fahrtenbuch.application.support;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -13,13 +13,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import de.danielr1996.fahrtenbuch.model.Point;
+import de.danielr1996.fahrtenbuch.application.geojson.Features;
+import de.danielr1996.fahrtenbuch.domain.Messung;
 import one.util.streamex.StreamEx;
 
 public class Util {
@@ -74,15 +74,9 @@ public class Util {
 
     public static List<Double> getSpeed(FeatureCollection featureCollection) {
         return StreamEx.of(featureCollection.getFeatures())
-                .pairMap((p1, p2) -> {
-                    LocalDateTime start = LocalDateTime.parse(p1.getProperty("date"), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-                    LocalDateTime end = LocalDateTime.parse(p2.getProperty("date"), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-                    long timeInSeconds = ChronoUnit.SECONDS.between(start, end);
-                    double distanceInKm = Point.fromGeoJsonPoint((org.geojson.Point) p1.getGeometry()).distanceInKm(Point.fromGeoJsonPoint((org.geojson.Point) p2.getGeometry()));
-                    double speedInKmS = distanceInKm / timeInSeconds;
-                    double speedInKmH = speedInKmS * 3600;
-                    return speedInKmH;
-                }).collect(Collectors.toList());
+                .map(Features::toMessung)
+                .pairMap(Messung::speed)
+                .collect(Collectors.toList());
     }
 
     public static String speedToCsv(List<Double> speeds) {
