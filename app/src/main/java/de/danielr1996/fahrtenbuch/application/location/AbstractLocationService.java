@@ -1,19 +1,16 @@
-package de.danielr1996.fahrtenbuch.location;
-
-import android.location.Location;
-import android.location.LocationListener;
-import android.os.Bundle;
+package de.danielr1996.fahrtenbuch.application.location;
 
 import java.util.function.Consumer;
 
-import de.danielr1996.fahrtenbuch.model.Point;
+import de.danielr1996.fahrtenbuch.domain.Punkt;
+
 
 public abstract class AbstractLocationService implements LocationService{
-    protected Consumer<Point> callback = point -> {};
+    protected Consumer<Punkt> callback = point -> {};
     protected Consumer<Boolean> callbackActive = active->{};
 
     @Override
-    public LocationService registerCallback(Consumer<Point> callback) {
+    public LocationService registerCallback(Consumer<Punkt> callback) {
         this.callback = callback;
         return this;
     }
