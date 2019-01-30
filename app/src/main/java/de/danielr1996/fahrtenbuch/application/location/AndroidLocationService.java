@@ -12,7 +12,7 @@ import java.util.function.Consumer;
 
 import androidx.core.content.ContextCompat;
 import de.danielr1996.fahrtenbuch.domain.Punkt;
-
+@Deprecated
 public class AndroidLocationService extends AbstractLocationService {
     private LocationManager locationManager;
     private Activity activity;

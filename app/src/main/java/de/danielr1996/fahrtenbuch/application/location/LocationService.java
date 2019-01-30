@@ -4,7 +4,7 @@ import java.util.function.Consumer;
 
 import de.danielr1996.fahrtenbuch.domain.Punkt;
 
-
+@Deprecated
 public interface LocationService {
     LocationService registerCallback(Consumer<Punkt> callback);
 
