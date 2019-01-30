@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import de.danielr1996.fahrtenbuch.domain.Punkt;
 
 
+@Deprecated
 public abstract class AbstractLocationService implements LocationService{
     protected Consumer<Punkt> callback = point -> {};
     protected Consumer<Boolean> callbackActive = active->{};

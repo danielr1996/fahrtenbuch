@@ -1,60 +1,49 @@
 package de.danielr1996.fahrtenbuch.application.location;
 
-import android.Manifest;
-import android.app.Activity;
-import android.content.IntentSender;
-import android.content.pm.PackageManager;
+import android.content.Context;
 import android.location.Location;
 
-import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResponse;
-import com.google.android.gms.location.SettingsClient;
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 
 import java.util.function.Consumer;
 
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
 import de.danielr1996.fahrtenbuch.domain.Punkt;
-
+@Deprecated
 public class GoogleLocationService extends AbstractLocationService {
     private FusedLocationProviderClient client;
-    private Activity activity;
+//    private Activity activity;
     private LocationCallback listener;
     private LocationRequest locationRequest = LocationRequest.create()
             .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
             .setInterval(1000)
             .setFastestInterval(1000);
 
-    public GoogleLocationService(Activity activity) {
-        this.client = LocationServices.getFusedLocationProviderClient(activity);
-        this.activity = activity;
+    public GoogleLocationService(Context context) {
+        this.client = LocationServices.getFusedLocationProviderClient(context);
+//        this.activity = activity;
     }
 
     @Override
     public void start() {
         super.start();
         listener = new GoogleLocationListener(callback);
-        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        /*if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // Check Permissions Now
             ActivityCompat.requestPermissions(activity,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-        } else {
-            LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
-            SettingsClient settingsClient = LocationServices.getSettingsClient(activity);
-            Task<LocationSettingsResponse> task = settingsClient.checkLocationSettings(builder.build());
-            task.addOnSuccessListener(activity, res -> {
+        } else {*/
+//            LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
+//            SettingsClient settingsClient = LocationServices.getSettingsClient(activity);
+//            Task<LocationSettingsResponse> task = settingsClient.checkLocationSettings(builder.build());
+//            task.addOnSuccessListener(activity, res -> {
                 client.requestLocationUpdates(locationRequest, listener, null);
-            });
-            task.addOnFailureListener(activity, new OnFailureListener() {
+//            });
+            /*task.addOnFailureListener(activity, new OnFailureListener() {
                 @Override
                 public void onFailure(@NonNull Exception e) {
                     if (e instanceof ResolvableApiException) {
@@ -72,9 +61,9 @@ public class GoogleLocationService extends AbstractLocationService {
                         }
                     }
                 }
-            });
+            });*/
 //            client.getLastLocation().addOnSuccessListener(new GoogleLocationListener(callback));
-        }
+//        }
     }
 
     @Override
