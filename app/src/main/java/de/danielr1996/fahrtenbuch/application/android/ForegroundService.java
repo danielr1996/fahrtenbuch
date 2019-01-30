@@ -9,7 +9,6 @@ import android.os.IBinder;
 import android.util.Log;
 
 import de.danielr1996.fahrtenbuch.R;
-import de.danielr1996.fahrtenbuch.application.geojson.Features;
 public class ForegroundService extends Service {
 
     @Override
@@ -23,7 +22,7 @@ public class ForegroundService extends Service {
         Notification.Builder builder = new Notification.Builder(getApplicationContext(), "tracking_active")
                 .setContentTitle("Fahrtenbuch")
                 .setContentText("Tracking aktiv")
-                .setSmallIcon(R.drawable.ic_baseline_map_24px)
+                .setSmallIcon(R.drawable.ic_baseline_layers_24px)
                 .setAutoCancel(true);
         startForeground(12345678, builder.build());
     }
