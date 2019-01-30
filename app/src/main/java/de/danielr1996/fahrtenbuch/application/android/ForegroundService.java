@@ -3,6 +3,7 @@ package de.danielr1996.fahrtenbuch.application.android;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
@@ -19,12 +20,18 @@ public class ForegroundService extends Service {
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         notificationManager.createNotificationChannel(channel);
 
-        Notification.Builder builder = new Notification.Builder(getApplicationContext(), "tracking_active")
+        Intent openAppIntent = new Intent(this, MainActivity.class);
+        PendingIntent intent = PendingIntent.getActivities(this, 0, new Intent[]{openAppIntent}, 0);
+
+
+        Notification notification = new Notification.Builder(getApplicationContext(), "tracking_active")
                 .setContentTitle("Fahrtenbuch")
                 .setContentText("Tracking aktiv")
                 .setSmallIcon(R.drawable.ic_baseline_layers_24px)
-                .setAutoCancel(true);
-        startForeground(12345678, builder.build());
+                .setAutoCancel(true)
+                .setContentIntent(intent)
+                .build();
+        startForeground(12345678, notification);
     }
 
     @Override
