@@ -1,6 +1,7 @@
 package de.danielr1996.fahrtenbuch.application.location;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -14,9 +15,7 @@ import java.util.stream.Stream;
 
 import de.danielr1996.fahrtenbuch.domain.LocationRepository;
 import de.danielr1996.fahrtenbuch.domain.Messung;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
-import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.Observable;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
 
@@ -29,41 +28,31 @@ public class PlayServicesLocationRepository implements LocationRepository {
             .setFastestInterval(1000);
     private Subject<Messung> messungSubject = PublishSubject.create();
     private Subject<List<Messung>> messungenSubject = PublishSubject.create();
-    private Subject<Boolean> activeSubject = BehaviorSubject.create();
 
     public PlayServicesLocationRepository(Context context) {
         this.client = LocationServices.getFusedLocationProviderClient(context);
-        activeSubject.onNext(false);
-        activeSubject.doOnSubscribe(System.out::println);
-        messungenSubject.doOnSubscribe(System.out::println);
-    }
-
-    public void start() throws SecurityException{
-        client.requestLocationUpdates(locationRequest, listener, null);
-        activeSubject.onNext(true);
-    }
-
-    public void stop() {
-        client.removeLocationUpdates(listener);
-        activeSubject.onNext(false);
-    }
-
-    public Flowable<Boolean> isActive(){
-        return activeSubject.toFlowable(BackpressureStrategy.LATEST);
-    }
-
-
-    @Override
-    public Flowable<Messung> getMessung(){
-        return messungSubject.toFlowable(BackpressureStrategy.LATEST);
     }
 
     @Override
-    public Flowable<List<Messung>> getMessungen() {
-        return messungenSubject.toFlowable(BackpressureStrategy.LATEST);
+    public Observable<Messung> getMessung() {
+        return messungSubject
+                .doOnDispose(() -> {
+                    Log.i(PlayServicesLocationRepository.class.getName(), "getMessung.doOnDispose");
+                    client.removeLocationUpdates(listener);
+                })
+                .doOnSubscribe(noop -> {
+                    Log.i(PlayServicesLocationRepository.class.getName(), "getMessung.doOnSubscribe");
+                    // FIXME: Berechtigungen überprüfen
+                    client.requestLocationUpdates(locationRequest, listener, null);
+                });
     }
 
-    protected class PlayServicesLocationListner extends LocationCallback{
+    @Override
+    public Observable<List<Messung>> getMessungen() {
+        return messungenSubject.doOnSubscribe(noop -> Log.i(PlayServicesLocationRepository.class.getName(), "getMessungen.doOnSubscribe"));
+    }
+
+    protected class PlayServicesLocationListner extends LocationCallback {
 
         @Override
         public void onLocationResult(LocationResult locationResult) {

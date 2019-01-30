@@ -20,9 +20,12 @@ import de.danielr1996.fahrtenbuch.application.geojson.FeatureCollections;
 import de.danielr1996.fahrtenbuch.application.location.PlayServicesLocationRepository;
 import de.danielr1996.fahrtenbuch.application.storage.DatabaseMessungRepository;
 import de.danielr1996.fahrtenbuch.application.support.GeoJsonExporter;
+import de.danielr1996.fahrtenbuch.domain.LocationRepository;
+import de.danielr1996.fahrtenbuch.domain.Messung;
 import de.danielr1996.fahrtenbuch.domain.MessungRepository;
 import de.danielr1996.fahrtenbuch.domain.Messungen;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 
 public class MainActivity extends AppCompatActivity {
     private TextView tvDistance, tvActive, tvSince;
@@ -31,8 +34,8 @@ public class MainActivity extends AppCompatActivity {
     Intent trackingServiceIntent;
     private boolean trackingActive = false;
     private MessungRepository messungRepository;
-    private PlayServicesLocationRepository locationRepository;
-    Disposable dis;
+    private LocationRepository locationRepository;
+    Disposable locationSubscription;
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -62,23 +65,6 @@ public class MainActivity extends AppCompatActivity {
         ivActive = findViewById(R.id.iv_active);
         messungRepository = new DatabaseMessungRepository(getApplicationContext());
 
-
-//        locationService = new GoogleLocationService(this)
-//                .registerCallback(point -> {
-////                    Log.i(GoogleLocationService.class.getName(), "Received New Location: " + point);
-//                    messungRepository.insertAll(Messung.builder().timestamp(LocalDateTime.now()).punkt(point).build());
-//                })
-//                .registerCallbackActive(active -> {
-//                    trackingActive = active;
-//                    if (active) {
-//                        ivActive.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_baseline_active_24px));
-//                        tvActive.setText(getText(R.string.tv_active_active));
-//                    } else {
-//                        ivActive.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_baseline_inactive_24px));
-//                        tvActive.setText(getText(R.string.tv_active_inactive));
-//                    }
-//                });
-
         Disposable textViewAktualisieren = messungRepository.getAll()
                 .map(Messungen::length)
                 .subscribe(distance -> runOnUiThread(() -> this.tvDistance.setText(String.format(getString(R.string.tv_kilometers), distance))));
@@ -99,27 +85,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onStartMessung(MenuItem mi) {
-//        locationService.start();
-        locationRepository.start();
-        dis = locationRepository.getMessung().subscribe(messung -> {
-            messungRepository.insertAll(messung);
-            Log.e(MainActivity.class.getName(), messung.toString());
-        });
-        Disposable d = locationRepository.isActive().subscribe(active -> {
-            Log.e(MainActivity.class.getName(), active.toString());
-            trackingActive = active;
-            if (active) {
-                ivActive.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_baseline_active_24px));
-                tvActive.setText(getText(R.string.tv_active_active));
-            } else {
-                ivActive.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_baseline_inactive_24px));
-                tvActive.setText(getText(R.string.tv_active_inactive));
-            }
-        });
+        locationSubscription = locationRepository.getMessung().subscribe(doOnMessung());
+        ivActive.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_baseline_active_24px));
+        tvActive.setText(getText(R.string.tv_active_active));
     }
 
     public void onStopMessung(MenuItem mi) {
-        locationRepository.stop();
+        locationSubscription.dispose();
+        ivActive.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_baseline_inactive_24px));
+        tvActive.setText(getText(R.string.tv_active_inactive));
     }
 
     public void onExport(MenuItem mi) {
@@ -165,5 +139,12 @@ public class MainActivity extends AppCompatActivity {
             trackingServiceIntent = new Intent(this.getApplication(), ForegroundService.class);
             this.getApplication().startForegroundService(trackingServiceIntent);
         }
+    }
+
+    public Consumer<Messung> doOnMessung() {
+        return (messung) -> {
+            messungRepository.insertAll(messung);
+            Log.i(MainActivity.class.getName(), messung.toString());
+        };
     }
 }
