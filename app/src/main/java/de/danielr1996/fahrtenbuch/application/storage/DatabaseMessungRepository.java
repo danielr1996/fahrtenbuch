@@ -14,13 +14,21 @@ import io.reactivex.Single;
 
 public class DatabaseMessungRepository implements MessungRepository {
     private MessungDao dao;
+    private static DatabaseMessungRepository instance;
 
-    public DatabaseMessungRepository(Context ctx) {
+    private DatabaseMessungRepository(Context ctx) {
         dao = Room.databaseBuilder(ctx, AppDatabase.class, "users")
                 .allowMainThreadQueries()
                 .fallbackToDestructiveMigration()
                 .build()
                 .messungDao();
+    }
+
+    public static DatabaseMessungRepository getInstance(Context ctx){
+        if(instance==null){
+            instance = new DatabaseMessungRepository(ctx);
+        }
+        return instance;
     }
 
     @Override

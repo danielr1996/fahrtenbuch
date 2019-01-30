@@ -28,9 +28,17 @@ public class PlayServicesLocationRepository implements LocationRepository {
             .setFastestInterval(1000);
     private Subject<Messung> messungSubject = PublishSubject.create();
     private Subject<List<Messung>> messungenSubject = PublishSubject.create();
+    private static PlayServicesLocationRepository instance;
 
-    public PlayServicesLocationRepository(Context context) {
+    private PlayServicesLocationRepository(Context context) {
         this.client = LocationServices.getFusedLocationProviderClient(context);
+    }
+
+    public static PlayServicesLocationRepository getInstance(Context ctx){
+        if(instance==null){
+            instance = new PlayServicesLocationRepository(ctx);
+        }
+        return instance;
     }
 
     @Override

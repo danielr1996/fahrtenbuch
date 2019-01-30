@@ -1,13 +1,7 @@
 package de.danielr1996.fahrtenbuch.application.android;
 
-import androidx.fragment.app.FragmentActivity;
-import androidx.room.Room;
-import de.danielr1996.fahrtenbuch.R;
-import de.danielr1996.fahrtenbuch.application.storage.AppDatabase;
-import de.danielr1996.fahrtenbuch.application.storage.MessungDao;
-import io.reactivex.disposables.Disposable;
-
 import android.os.Bundle;
+import android.util.Log;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -16,13 +10,22 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+import androidx.fragment.app.FragmentActivity;
+import de.danielr1996.fahrtenbuch.R;
+import de.danielr1996.fahrtenbuch.application.storage.DatabaseMessungRepository;
+import de.danielr1996.fahrtenbuch.domain.Messung;
+import de.danielr1996.fahrtenbuch.domain.MessungRepository;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
     private GoogleMap mMap;
-    private MessungDao dao;
+    private MessungRepository messungRepository;
+    Disposable disposableDatabaseUpdate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,7 +34,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        dao = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "users").allowMainThreadQueries().fallbackToDestructiveMigration().build().messungDao();
+        this.messungRepository = DatabaseMessungRepository.getInstance(this);
+    }
+
+    public Consumer<List<Messung>> doMapAktualisierungOnDatabaseUpdate() {
+        return list -> {
+            List<LatLng> cameras = new ArrayList<>();
+            list.stream()
+                    .map(messung -> {
+                        LatLng latLng = new LatLng(messung.getPunkt().getLatitude(), messung.getPunkt().getLongitude());
+                        cameras.add(latLng);
+                        return new MarkerOptions().position(latLng).title(messung.getTimestamp().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+                    }).forEach(marker -> runOnUiThread(() -> mMap.addMarker(marker)));
+            if (cameras.size() > 0) {
+                runOnUiThread(() -> {
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(cameras.get(0), 10));
+                });
+            }
+        };
     }
 
 
@@ -46,24 +66,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        Log.i(MapsActivity.class.getName(), "onMapReady");
         mMap = googleMap;
-        List<LatLng> camera = new ArrayList<>();
+    }
 
-        Disposable mapAktualisierung = dao.getAll()
-                .subscribe(list -> {
-                    list.stream()
-                            .map(messung -> {
-                                LatLng latLng = new LatLng(messung.latitude, messung.longitude);
-                                camera.add(latLng);
-                                return new MarkerOptions().position(latLng).title(messung.dateTime);
-                            }).forEach(marker -> runOnUiThread(() -> mMap.addMarker(marker)));
-                    if (camera.size() > 0) {
-                        runOnUiThread(() -> {
-                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(camera.get(0),10));
-                        });
-                    }
-                });
+    @Override
+    protected void onPause() {
+        Log.i(MapsActivity.class.getName(), "onPause");
+        super.onPause();
+        this.disposableDatabaseUpdate.dispose();
+    }
 
-
+    @Override
+    protected void onResume() {
+        Log.i(MapsActivity.class.getName(), "onResume");
+        super.onResume();
+        this.disposableDatabaseUpdate = this.messungRepository.getAll()
+                .doOnNext(noop -> Log.e(MapsActivity.class.getName(), "onDatabaseUpdate"))
+                .subscribe(doMapAktualisierungOnDatabaseUpdate());
     }
 }

@@ -13,7 +13,6 @@ import android.widget.Toast;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import butterknife.BindView;
@@ -47,27 +46,58 @@ public class MainActivity extends AppCompatActivity {
     private MessungRepository messungRepository;
     private LocationRepository locationRepository;
     private Disposable locationSubscription;
+    private Disposable disposableLengthTextView;
+    private Disposable disposableSinceTextView;
 
+    /**
+     * Lifecycle Methods
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.i(MainActivity.class.getName(), "onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        locationRepository = new PlayServicesLocationRepository(this);
-        messungRepository = new DatabaseMessungRepository(getApplicationContext());
 
-        Disposable disposableLengthTextView = messungRepository.getAll()
+        locationRepository = PlayServicesLocationRepository.getInstance(this);
+        messungRepository = DatabaseMessungRepository.getInstance(getApplicationContext());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.i(MainActivity.class.toString(), "onResume");
+        if (trackingServiceIntent != null)
+            stopService(trackingServiceIntent);
+
+        disposableLengthTextView = messungRepository.getAll()
                 .map(Messungen::length)
+                .doOnNext(length -> Log.i(MainActivity.class.getName(), length + ""))
                 .subscribe(doDistanceTextViewUpdateOnDatabaseUpdate());
-        Disposable disposableSinceTextView = messungRepository.getAll()
+        disposableSinceTextView = messungRepository.getAll()
+                .doOnNext(length -> Log.i(MainActivity.class.getName(), length + ""))
                 .subscribe(doSinceTextViewUpdateOnDatabaseUpdate());
     }
 
+    @Override
+    protected void onPause() {
+        this.disposableLengthTextView.dispose();
+        this.disposableSinceTextView.dispose();
+        super.onPause();
+        Log.i(MainActivity.class.toString(), "onPause");
+        if (trackingActive) {
+            trackingServiceIntent = new Intent(this.getApplication(), ForegroundService.class);
+            this.getApplication().startForegroundService(trackingServiceIntent);
+        }
+    }
+
+    /**
+     * RxJava Handlers
+     */
     public Consumer<Messung> onLocationUpdateWriteToDatabase() {
         return (messung) -> {
             messungRepository.insertAll(messung);
-            Log.i(MainActivity.class.getName(), messung.toString());
+            Log.e(MainActivity.class.getName(), messung.toString());
         };
     }
 
@@ -137,27 +167,6 @@ public class MainActivity extends AppCompatActivity {
     public void onMap(MenuItem mi) {
         Intent intent = new Intent(this, MapsActivity.class);
         startActivity(intent);
-    }
-
-    /**
-     * Lifecycle Methods
-     */
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.i(MainActivity.class.toString(), "onResume");
-        if (trackingServiceIntent != null)
-            stopService(trackingServiceIntent);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        Log.i(MainActivity.class.toString(), "onPause");
-        if (trackingActive) {
-            trackingServiceIntent = new Intent(this.getApplication(), ForegroundService.class);
-            this.getApplication().startForegroundService(trackingServiceIntent);
-        }
     }
 
     /**
