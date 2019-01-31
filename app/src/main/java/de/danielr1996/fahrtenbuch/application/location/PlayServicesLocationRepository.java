@@ -1,6 +1,7 @@
 package de.danielr1996.fahrtenbuch.application.location;
 
-import android.content.Context;
+import android.Manifest;
+import android.app.Activity;
 import android.util.Log;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import androidx.core.content.ContextCompat;
 import de.danielr1996.fahrtenbuch.domain.LocationRepository;
 import de.danielr1996.fahrtenbuch.domain.Messung;
 import io.reactivex.Observable;
@@ -29,14 +31,17 @@ public class PlayServicesLocationRepository implements LocationRepository {
     private Subject<Messung> messungSubject = PublishSubject.create();
     private Subject<List<Messung>> messungenSubject = PublishSubject.create();
     private static PlayServicesLocationRepository instance;
+    private Activity activity;
 
-    private PlayServicesLocationRepository(Context context) {
-        this.client = LocationServices.getFusedLocationProviderClient(context);
+    private PlayServicesLocationRepository(Activity activity) {
+        this.activity = activity;
+        this.client = LocationServices.getFusedLocationProviderClient(activity.getApplicationContext());
+
     }
 
-    public static PlayServicesLocationRepository getInstance(Context ctx){
-        if(instance==null){
-            instance = new PlayServicesLocationRepository(ctx);
+    public static PlayServicesLocationRepository getInstance(Activity activity) {
+        if (instance == null) {
+            instance = new PlayServicesLocationRepository(activity);
         }
         return instance;
     }
@@ -51,7 +56,9 @@ public class PlayServicesLocationRepository implements LocationRepository {
                 .doOnSubscribe(noop -> {
                     Log.i(PlayServicesLocationRepository.class.getName(), "getMessung.doOnSubscribe");
                     // FIXME: Berechtigungen überprüfen
+                    ContextCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION);
                     client.requestLocationUpdates(locationRequest, listener, null);
+
                 });
     }
 
