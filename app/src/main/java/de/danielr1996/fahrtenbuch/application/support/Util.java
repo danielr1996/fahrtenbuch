@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
+import org.geojson.GeoJsonObject;
+import org.geojson.LineString;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,6 +21,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import de.danielr1996.fahrtenbuch.application.geojson.Features;
+import de.danielr1996.fahrtenbuch.application.geojson.LineStrings;
 import de.danielr1996.fahrtenbuch.domain.Messung;
 import one.util.streamex.StreamEx;
 
@@ -42,20 +45,20 @@ public class Util {
         return null;
     }
 
-    public static void writeFeatureCollection(FeatureCollection collection, OutputStream os) {
+    public static void writeGeoJsonObject(GeoJsonObject geoJsonObject, OutputStream os) {
         ObjectMapper om = new ObjectMapper();
         try {
-            om.writeValue(os, collection);
+            om.writeValue(os, geoJsonObject);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static void writeFeatureCollection(FeatureCollection collection, File file) {
+    public static void writeGeoJsonObject(GeoJsonObject geoJsonObject, File file) {
         ObjectMapper om = new ObjectMapper();
         try {
             if (!file.exists()) file.createNewFile();
-            om.writeValue(file, collection);
+            om.writeValue(file, geoJsonObject);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -112,8 +115,9 @@ public class Util {
     }
 
     public static void main(String[] args) {
-        FeatureCollection featureCollection = readFeatureCollection(new File("C:\\Users\\Daniel\\Google Drive\\fahrtenbuch (1).json"));
-//        writeFeatureCollection(reducePoints(featureCollection, 20), new File("C:\\Users\\Daniel\\Desktop\\featurecollection.json"));
+        FeatureCollection featureCollection = readFeatureCollection(new File("C:\\Users\\Daniel\\Google Drive\\fahrtenbuch (3).json"));
+        LineString lineString = LineStrings.fromFeatureCollection(featureCollection);
+        writeGeoJsonObject(lineString, new File("C:\\Users\\Daniel\\Desktop\\featurecollection.json"));
 
     }
 }

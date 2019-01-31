@@ -1,9 +1,9 @@
 package de.danielr1996.fahrtenbuch.application.geojson;
 
+import org.geojson.GeoJsonObject;
 import org.geojson.LngLatAlt;
 import org.geojson.Point;
 
-import de.danielr1996.fahrtenbuch.domain.Messung;
 import de.danielr1996.fahrtenbuch.domain.Punkt;
 
 public class Points {
@@ -23,5 +23,9 @@ public class Points {
         coord.setAltitude(punkt.getAltitude());
         point.setCoordinates(coord);
         return point;
+    }
+
+    public static Point fromGeometry(GeoJsonObject geometry){
+        return (Point)geometry;
     }
 }
